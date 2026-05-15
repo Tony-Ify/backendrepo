@@ -1,36 +1,42 @@
-import { IsEmail, IsString, MinLength, MaxLength, IsEnum, IsOptional } from 'class-validator';
+import {
+  IsString,
+  IsEmail,
+  MinLength,
+  MaxLength,
+  IsEnum,
+} from 'class-validator';
 
-export enum State {
-  LAGOS = 'Lagos',
-  ABUJA = 'Abuja',
-  KANO = 'Kano',
-  KADUNA = 'Kaduna',
-  ENUGU = 'Enugu',
-  PORT_HARCOURT = 'Port Harcourt',
-  IBADAN = 'Ibadan',
-  BENIN_CITY = 'Benin City',
-  JOS = 'Jos',
-  KATSINA = 'Katsina',
-  OWERRI = 'Owerri',
-  ABEOKUTA = 'Abeokuta',
-  OSOGBO = 'Osogbo',
-  ILORIN = 'Ilorin',
-  LOKOJA = 'Lokoja',
-  AKURE = 'Akure',
-  CALABAR = 'Calabar',
-  UMUAHIA = 'Umuahia',
-  YENAGOA = 'Yenagoa',
-  ASABA = 'Asaba',
-  MAIDUGURI = 'Maiduguri',
-  GUSAU = 'Gusau',
-  BIRNIN_KEBBI = 'Birnin Kebbi',
-  GOMBE = 'Gombe',
-  DAMATURU = 'Damaturu',
-  MAKURDI = 'Makurdi',
-  LAFIA = 'Lafia',
-  BAUCHI = 'Bauchi',
-  DUTSE = 'Dutse',
-  FEDERAL_CAPITAL_TERRITORY = 'Federal Capital Territory',
+enum State {
+  Lagos = 'Lagos',
+  Abuja = 'Abuja',
+  Kano = 'Kano',
+  Kaduna = 'Kaduna',
+  Enugu = 'Enugu',
+  PortHarcourt = 'Port Harcourt',
+  Ibadan = 'Ibadan',
+  BeninCity = 'Benin City',
+  Jos = 'Jos',
+  Katsina = 'Katsina',
+  Owerri = 'Owerri',
+  Abeokuta = 'Abeokuta',
+  Osogbo = 'Osogbo',
+  Ilorin = 'Ilorin',
+  Lokoja = 'Lokoja',
+  Akure = 'Akure',
+  Calabar = 'Calabar',
+  Umuahia = 'Umuahia',
+  Yenagoa = 'Yenagoa',
+  Asaba = 'Asaba',
+  Maiduguri = 'Maiduguri',
+  Gusau = 'Gusau',
+  BirnKebbi = 'Birnin Kebbi',
+  Gombe = 'Gombe',
+  Damaturu = 'Damaturu',
+  Makurdi = 'Makurdi',
+  Lafia = 'Lafia',
+  Bauchi = 'Bauchi',
+  Dutse = 'Dutse',
+  FCT = 'Federal Capital Territory',
 }
 
 export class SignUpDto {
@@ -44,11 +50,11 @@ export class SignUpDto {
 
   @IsString()
   @MinLength(6)
-  @MaxLength(50)
+  @MaxLength(100)
   password!: string;
 
   @IsEnum(State)
-  state!: State;
+  state!: string;
 }
 
 export class LoginDto {
@@ -67,9 +73,4 @@ export class AuthResponseDto {
   role!: string;
   accessToken!: string;
   expiresIn!: string;
-}
-
-export class RefreshTokenDto {
-  @IsString()
-  refreshToken!: string;
 }

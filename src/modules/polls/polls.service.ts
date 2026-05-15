@@ -1,11 +1,7 @@
-import {
-  Injectable,
-  NotFoundException,
-  ForbiddenException,
-} from '@nestjs/common';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository, In } from 'typeorm';
-import { Poll, PollStatus } from './entities/poll.entity';
+import { Repository } from 'typeorm';
+import { Poll } from './entities/poll.entity';
 import { PollOption } from './entities/poll-option.entity';
 import { CreatePollDto, UpdatePollDto, UpdatePollStatusDto } from './poll.dto';
 
@@ -15,162 +11,136 @@ export class PollsService {
     @InjectRepository(Poll)
     private pollsRepository: Repository<Poll>,
     @InjectRepository(PollOption)
-    private pollOptionsRepository: Repository<PollOption>,
+    private pollOptionRepository: Repository<PollOption>,
   ) {}
 
-  async create(createPollDto: CreatePollDto, userId: number): Promise<Poll> {
-    const { title, description, options } = createPollDto;
-
+  async create(userId: number, createPollDto: CreatePollDto): Promise<Poll> {
     const poll = this.pollsRepository.create({
-      title,
-      description,
+      title: createPollDto.title,
+      description: createPollDto.description,
       createdById: userId,
-      status: PollStatus.ACTIVE,
     });
 
     const savedPoll = await this.pollsRepository.save(poll);
 
-    // Create poll options
-    const pollOptions = options.map((option, index) =>
-      this.pollOptionsRepository.create({
-        pollId: savedPoll.id,
-        optionText: option.optionText,
-        displayOrder: option.displayOrder || index,
-      }),
-    );
+    if (createPollDto.options && createPollDto.options.length > 0) {
+      const options = createPollDto.options.map((opt, index) =>
+        this.pollOptionRepository.create({
+          optionText: opt.optionText,
+          displayOrder: index,
+          pollId: savedPoll.id,
+        }),
+      );
+      await this.pollOptionRepository.save(options);
+    }
 
-    savedPoll.options = await this.pollOptionsRepository.save(pollOptions);
-
-    return savedPoll;
+    return this.findById(savedPoll.id);
   }
 
   async findById(id: number): Promise<Poll> {
     const poll = await this.pollsRepository.findOne({
       where: { id },
-      relations: ['options', 'createdBy'],
+      relations: ['createdBy', 'options', 'votes'],
     });
 
     if (!poll) {
-      throw new NotFoundException(`Poll with ID ${id} not found`);
+      throw new NotFoundException('Poll not found');
     }
 
     return poll;
   }
 
-  async findAll(status?: PollStatus): Promise<Poll[]> {
+  async findAll(status?: 'active' | 'closed'): Promise<Poll[]> {
     const query = this.pollsRepository.createQueryBuilder('poll')
-      .leftJoinAndSelect('poll.options', 'options')
       .leftJoinAndSelect('poll.createdBy', 'createdBy')
+      .leftJoinAndSelect('poll.options', 'options')
+      .leftJoinAndSelect('poll.votes', 'votes')
       .orderBy('poll.createdAt', 'DESC');
 
     if (status) {
       query.where('poll.status = :status', { status });
     }
 
-    return await query.getMany();
+    return query.getMany();
   }
 
   async findActive(): Promise<Poll[]> {
-    return await this.findAll(PollStatus.ACTIVE);
+    return this.findAll('active');
   }
 
   async findClosed(): Promise<Poll[]> {
-    return await this.findAll(PollStatus.CLOSED);
+    return this.findAll('closed');
   }
 
   async update(
     id: number,
-    updatePollDto: UpdatePollDto,
     userId: number,
+    updatePollDto: UpdatePollDto,
   ): Promise<Poll> {
     const poll = await this.findById(id);
 
-    // Check if user is the creator or admin
     if (poll.createdById !== userId) {
-      throw new ForbiddenException(
-        'You do not have permission to update this poll',
-      );
+      throw new ForbiddenException('You can only edit your own polls');
     }
 
-    const { title, description, options } = updatePollDto;
+    poll.title = updatePollDto.title;
+    poll.description = updatePollDto.description;
 
-    if (title) poll.title = title;
-    if (description) poll.description = description;
+    if (updatePollDto.options) {
+      await this.pollOptionRepository.delete({ pollId: id });
 
-    const updatedPoll = await this.pollsRepository.save(poll);
-
-    if (options) {
-      // Delete existing options
-      await this.pollOptionsRepository.delete({ pollId: id });
-
-      // Create new options
-      const newOptions = options.map((option, index) =>
-        this.pollOptionsRepository.create({
+      const options = updatePollDto.options.map((opt, index) =>
+        this.pollOptionRepository.create({
+          optionText: opt.optionText,
+          displayOrder: index,
           pollId: id,
-          optionText: option.optionText,
-          displayOrder: option.displayOrder || index,
         }),
       );
-
-      updatedPoll.options = await this.pollOptionsRepository.save(newOptions);
+      await this.pollOptionRepository.save(options);
     }
 
-    return updatedPoll;
+    return this.pollsRepository.save(poll);
   }
 
   async updateStatus(
     id: number,
-    updateStatusDto: UpdatePollStatusDto,
     userId: number,
+    updateStatusDto: UpdatePollStatusDto,
   ): Promise<Poll> {
     const poll = await this.findById(id);
 
-    // Check if user is the creator
     if (poll.createdById !== userId) {
-      throw new ForbiddenException(
-        'You do not have permission to update this poll status',
-      );
+      throw new ForbiddenException('You can only update your own polls');
     }
 
     poll.status = updateStatusDto.status;
-    if (updateStatusDto.status === PollStatus.CLOSED) {
+    if (updateStatusDto.status === 'closed') {
       poll.closedAt = new Date();
     }
 
-    return await this.pollsRepository.save(poll);
+    return this.pollsRepository.save(poll);
   }
 
   async delete(id: number, userId: number): Promise<void> {
     const poll = await this.findById(id);
 
-    // Check if user is the creator
     if (poll.createdById !== userId) {
-      throw new ForbiddenException(
-        'You do not have permission to delete this poll',
-      );
+      throw new ForbiddenException('You can only delete your own polls');
     }
 
-    const result = await this.pollsRepository.delete(id);
-
-    if (result.affected === 0) {
-      throw new NotFoundException(`Poll with ID ${id} not found`);
-    }
+    await this.pollsRepository.remove(poll);
   }
 
-  async getPollOption(optionId: number): Promise<PollOption> {
-    const option = await this.pollOptionsRepository.findOne({
-      where: { id: optionId },
-    });
-
+  async getPollOption(id: number): Promise<PollOption> {
+    const option = await this.pollOptionRepository.findOne({ where: { id } });
     if (!option) {
-      throw new NotFoundException(`Poll option with ID ${optionId} not found`);
+      throw new NotFoundException('Poll option not found');
     }
-
     return option;
   }
 
   async getPollOptions(pollId: number): Promise<PollOption[]> {
-    return await this.pollOptionsRepository.find({
+    return this.pollOptionRepository.find({
       where: { pollId },
       order: { displayOrder: 'ASC' },
     });

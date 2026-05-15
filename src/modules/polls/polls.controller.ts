@@ -3,106 +3,78 @@ import {
   Get,
   Post,
   Put,
-  Delete,
   Patch,
-  Body,
+  Delete,
   Param,
+  Body,
   UseGuards,
   Request,
-  HttpStatus,
-  HttpCode,
   Query,
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { RolesGuard } from 'src/common/guards/roles.guard';
-import { Roles } from 'src/common/decorators/roles.decorator';
-import { UserRole } from '../users/entities/user.entity';
-import {
-  CreatePollDto,
-  UpdatePollDto,
-  UpdatePollStatusDto,
-  PollResponseDto,
-} from './poll.dto';
-import { Poll, PollStatus } from './entities/poll.entity';
+import { CreatePollDto, UpdatePollDto, UpdatePollStatusDto } from './poll.dto';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { RolesGuard } from '@/common/guards/roles.guard';
+import { Roles } from '@/common/decorators/roles.decorator';
 
 @Controller('polls')
 export class PollsController {
   constructor(private pollsService: PollsService) {}
 
   @Get()
-  @HttpCode(HttpStatus.OK)
-  async getAllPolls(
-    @Query('status') status?: PollStatus,
-  ): Promise<Poll[]> {
-    if (status) {
-      return await this.pollsService.findAll(status);
-    }
-    return await this.pollsService.findAll();
+  async getAllPolls(@Query('status') status?: 'active' | 'closed') {
+    return this.pollsService.findAll(status);
   }
 
   @Get('active')
-  @HttpCode(HttpStatus.OK)
-  async getActivePolls(): Promise<Poll[]> {
-    return await this.pollsService.findActive();
+  async getActivePools() {
+    return this.pollsService.findActive();
   }
 
   @Get('closed')
-  @HttpCode(HttpStatus.OK)
-  async getClosedPolls(): Promise<Poll[]> {
-    return await this.pollsService.findClosed();
+  async getClosedPolls() {
+    return this.pollsService.findClosed();
   }
 
   @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  async getPollById(@Param('id') id: number): Promise<Poll> {
-    return await this.pollsService.findById(id);
+  async getPollById(@Param('id') id: string) {
+    return this.pollsService.findById(Number(id));
   }
 
   @Post()
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.CREATED)
-  async createPoll(
-    @Body() createPollDto: CreatePollDto,
-    @Request() req,
-  ): Promise<Poll> {
-    return await this.pollsService.create(createPollDto, req.user.id);
+  @Roles('admin')
+  async createPoll(@Request() req: any, @Body() createPollDto: CreatePollDto) {
+    return this.pollsService.create(req.user.sub, createPollDto);
   }
 
   @Put(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
+  @Roles('admin')
   async updatePoll(
-    @Param('id') id: number,
+    @Param('id') id: string,
+    @Request() req: any,
     @Body() updatePollDto: UpdatePollDto,
-    @Request() req,
-  ): Promise<Poll> {
-    return await this.pollsService.update(id, updatePollDto, req.user.id);
+  ) {
+    return this.pollsService.update(Number(id), req.user.sub, updatePollDto);
   }
 
   @Patch(':id/status')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.OK)
+  @Roles('admin')
   async updatePollStatus(
-    @Param('id') id: number,
+    @Param('id') id: string,
+    @Request() req: any,
     @Body() updateStatusDto: UpdatePollStatusDto,
-    @Request() req,
-  ): Promise<Poll> {
-    return await this.pollsService.updateStatus(
-      id,
-      updateStatusDto,
-      req.user.id,
-    );
+  ) {
+    return this.pollsService.updateStatus(Number(id), req.user.sub, updateStatusDto);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
-  @Roles(UserRole.ADMIN)
-  @HttpCode(HttpStatus.NO_CONTENT)
-  async deletePoll(@Param('id') id: number, @Request() req): Promise<void> {
-    return await this.pollsService.delete(id, req.user.id);
+  @Roles('admin')
+  async deletePoll(@Param('id') id: string, @Request() req: any) {
+    await this.pollsService.delete(Number(id), req.user.sub);
+    return { message: 'Poll deleted successfully' };
   }
 }

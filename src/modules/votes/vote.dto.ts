@@ -1,5 +1,11 @@
 import { IsNumber, IsString, IsEnum } from 'class-validator';
-import { State } from '../auth/auth.dto';
+
+enum State {
+  Lagos = 'Lagos',
+  Abuja = 'Abuja',
+  Kano = 'Kano',
+  // ... include all 36 states
+}
 
 export class CreateVoteDto {
   @IsNumber()
@@ -8,8 +14,8 @@ export class CreateVoteDto {
   @IsNumber()
   optionId!: number;
 
-  @IsEnum(State)
-  state!: State;
+  @IsString()
+  state!: string;
 }
 
 export class VoteResponseDto {
@@ -30,30 +36,10 @@ export class VoteStatsDto {
 
 export class VoteResultsDto {
   pollId!: number;
-  pollTitle!: string;
   totalVotes!: number;
   stats!: VoteStatsDto[];
 }
 
-export class VoteResultsByStateDto {
-  pollId!: number;
-  pollTitle!: string;
-  selectedState!: string;
-  totalVotesInState!: number;
-  stats!: VoteStatsDto[];
-}
-
-export class AllStatesVoteResultsDto {
-  pollId!: number;
-  pollTitle!: string;
-  totalVotes!: number;
-  optionId!: number;
-  optionText!: string;
-  votesByState!: {
-    [state: string]: number;
-  };
-  stateWithMostVotes!: {
-    state: string;
-    votes: number;
-  };
+export class VoteResultsByStateDto extends VoteResultsDto {
+  state!: string;
 }

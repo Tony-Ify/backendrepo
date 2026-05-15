@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, BadRequestException, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { User } from './entities/user.entity';
@@ -10,54 +10,70 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
-  async create(userData: Partial<User>): Promise<User> {
+  async create(userData: {
+    name: string;
+    email: string;
+    password: string;
+    state: string;
+  }): Promise<User> {
     const user = this.usersRepository.create(userData);
-    return await this.usersRepository.save(user);
+    return this.usersRepository.save(user);
   }
 
-  async findById(id: number): Promise<User> {
-    const user = await this.usersRepository.findOne({ where: { id } });
-    if (!user) {
-      throw new NotFoundException(`User with ID ${id} not found`);
-    }
-    return user;
+  async findById(id: number): Promise<User | null> {
+    return this.usersRepository.findOne({ where: { id } });
   }
 
   async findByEmail(email: string): Promise<User | null> {
-    return await this.usersRepository.findOne({ where: { email } });
+    return this.usersRepository.findOne({ where: { email } });
   }
 
   async findByEmailWithPassword(email: string): Promise<User | null> {
-    return await this.usersRepository
+    return this.usersRepository
       .createQueryBuilder('user')
-      .where('user.email = :email', { email })
       .addSelect('user.password')
+      .where('user.email = :email', { email })
       .getOne();
   }
 
   async findAll(): Promise<User[]> {
-    return await this.usersRepository.find();
+    return this.usersRepository.find();
   }
 
-  async update(id: number, userData: Partial<User>): Promise<User> {
-    await this.usersRepository.update(id, userData);
-    return await this.findById(id);
+  async update(
+    id: number,
+    userData: Partial<{
+      name: string;
+      email: string;
+      state: string;
+    }>,
+  ): Promise<User> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+
+    Object.assign(user, userData);
+    return this.usersRepository.save(user);
   }
 
   async updateState(id: number, state: string): Promise<User> {
-    return await this.update(id, { state });
+    return this.update(id, { state });
   }
 
   async remove(id: number): Promise<void> {
-    const result = await this.usersRepository.delete(id);
-    if (result.affected === 0) {
-      throw new NotFoundException(`User with ID ${id} not found`);
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
     }
+    await this.usersRepository.remove(user);
   }
 
-  async getProfile(userId: number): Promise<Omit<User, 'password'>> {
-    const user = await this.findById(userId);
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+  async getProfile(id: number): Promise<User> {
+    const user = await this.findById(id);
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 }

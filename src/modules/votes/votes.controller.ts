@@ -2,17 +2,15 @@ import {
   Controller,
   Get,
   Post,
-  Body,
+  Delete,
   Param,
+  Body,
   UseGuards,
   Request,
-  HttpStatus,
-  HttpCode,
-  Query,
 } from '@nestjs/common';
 import { VotesService } from './votes.service';
-import {JwtAuthGuard} from 'src/common/guards/jwt-auth.guard';
 import { CreateVoteDto } from './vote.dto';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
 
 @Controller('votes')
 export class VotesController {
@@ -20,25 +18,26 @@ export class VotesController {
 
   @Post()
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.CREATED)
-  async submitVote(@Body() createVoteDto: CreateVoteDto, @Request() req) {
-    return await this.votesService.submitVote(createVoteDto, req.user.id);
+  async submitVote(@Request() req: any, @Body() createVoteDto: CreateVoteDto) {
+    return this.votesService.submitVote(req.user.sub, createVoteDto);
+  }
+
+  @Get('poll/:pollId/user-vote')
+  @UseGuards(JwtAuthGuard)
+  async getUserPollVote(@Request() req: any, @Param('pollId') pollId: string) {
+    return this.votesService.getUserPollVote(req.user.sub, Number(pollId));
   }
 
   @Get('poll/:pollId')
-  @HttpCode(HttpStatus.OK)
-  async getPollVotes(@Param('pollId') pollId: number) {
-    return await this.votesService.getPollVotes(pollId);
+  async getPollVotes(@Param('pollId') pollId: string) {
+    return this.votesService.getPollVotes(Number(pollId));
   }
 
-  @Get('user/:pollId')
+  @Delete(':id')
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async getUserPollVote(
-    @Param('pollId') pollId: number,
-    @Request() req,
-  ) {
-    return await this.votesService.getUserPollVote(req.user.id, pollId);
+  async deleteVote(@Param('id') id: string) {
+    await this.votesService.deleteVote(Number(id));
+    return { message: 'Vote deleted successfully' };
   }
 }
 
@@ -47,26 +46,20 @@ export class ResultsController {
   constructor(private votesService: VotesService) {}
 
   @Get(':pollId')
-  @HttpCode(HttpStatus.OK)
-  async getPollResults(@Param('pollId') pollId: number) {
-    return await this.votesService.getPollResults(pollId);
+  async getPollResults(@Param('pollId') pollId: string) {
+    return this.votesService.getPollResults(Number(pollId));
   }
 
   @Get(':pollId/by-state')
-  @HttpCode(HttpStatus.OK)
   async getPollResultsByState(
-    @Param('pollId') pollId: number,
-    @Query('state') state: string,
+    @Param('pollId') pollId: string,
+    @Body('state') state: string,
   ) {
-    if (!state) {
-      throw new Error('State parameter is required');
-    }
-    return await this.votesService.getPollResultsByState(pollId, state);
+    return this.votesService.getPollResultsByState(Number(pollId), state);
   }
 
-  @Get(':pollId/all-states')
-  @HttpCode(HttpStatus.OK)
-  async getPollResultsByAllStates(@Param('pollId') pollId: number) {
-    return await this.votesService.getPollResultsByAllStates(pollId);
+  @Get(':pollId/by-states')
+  async getPollResultsByAllStates(@Param('pollId') pollId: string) {
+    return this.votesService.getPollResultsByAllStates(Number(pollId));
   }
 }

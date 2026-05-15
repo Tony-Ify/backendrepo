@@ -2,16 +2,15 @@ import {
   Controller,
   Get,
   Put,
+  Param,
   Body,
   UseGuards,
   Request,
-  HttpStatus,
-  HttpCode,
-  Param,
+  NotFoundException,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
-import { JwtAuthGuard } from 'src/common/guards/jwt-auth.guard';
-import { User } from './entities/user.entity';
+import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { UpdateUserDto } from './users.dto';
 
 @Controller('users')
 export class UsersController {
@@ -19,41 +18,28 @@ export class UsersController {
 
   @Get('profile')
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async getProfile(@Request() req): Promise<Omit<User, 'password'>> {
-    return await this.usersService.getProfile(req.user.id);
+  async getProfile(@Request() req: any) {
+    return this.usersService.getProfile(req.user.sub);
   }
 
   @Put('profile')
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async updateProfile(
-    @Request() req,
-    @Body() updateData: Partial<User>,
-  ): Promise<User> {
-    return await this.usersService.update(req.user.id, updateData);
+  async updateProfile(@Request() req: any, @Body() updateUserDto: UpdateUserDto) {
+    return this.usersService.update(req.user.sub, updateUserDto);
   }
 
   @Get(':id')
-  @HttpCode(HttpStatus.OK)
-  async getUserById(@Param('id') id: number): Promise<Omit<User, 'password'>> {
-    const user = await this.usersService.findById(id);
-    const { password, ...userWithoutPassword } = user;
-    return userWithoutPassword;
+  async getUserById(@Param('id') id: string) {
+    const user = await this.usersService.findById(Number(id));
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    return user;
   }
 
   @Put(':id/state')
   @UseGuards(JwtAuthGuard)
-  @HttpCode(HttpStatus.OK)
-  async updateState(
-    @Request() req,
-    @Param('id') id: number,
-    @Body() { state }: { state: string },
-  ): Promise<User> {
-    // Users can only update their own state
-    if (req.user.id !== id) {
-      throw new Error('You can only update your own state');
-    }
-    return await this.usersService.updateState(id, state);
+  async updateUserState(@Param('id') id: string, @Body('state') state: string) {
+    return this.usersService.updateState(Number(id), state);
   }
 }
