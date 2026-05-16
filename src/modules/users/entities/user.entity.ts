@@ -6,8 +6,8 @@ import {
   UpdateDateColumn,
   OneToMany,
 } from 'typeorm';
-import { Vote } from 'src/modules/votes/entities/vote.entity';
-import { Poll } from 'src/modules/polls/entities/poll.entity';
+import { Vote } from '../../votes/entities/vote.entity';
+import { Poll } from '../../polls/entities/poll.entity';
 
 export enum UserRole {
   USER = 'user',
@@ -45,9 +45,9 @@ export class User {
   updatedAt!: Date;
 
   // Relations
-  @OneToMany(() => Vote, vote => vote.user, { cascade: true })
+  @OneToMany(() => Vote, (vote) => vote.user, { cascade: true })
   votes!: Vote[];
 
-  @OneToMany(() => Poll, poll => poll.createdBy)
+  @OneToMany(() => Poll, (poll) => poll.createdBy)
   createdPolls!: Poll[];
 }

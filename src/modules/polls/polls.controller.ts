@@ -13,9 +13,9 @@ import {
 } from '@nestjs/common';
 import { PollsService } from './polls.service';
 import { CreatePollDto, UpdatePollDto, UpdatePollStatusDto } from './poll.dto';
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
-import { RolesGuard } from '@/common/guards/roles.guard';
-import { Roles } from '@/common/decorators/roles.decorator';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { RolesGuard } from '../../common/guards/roles.guard';
+import { Roles } from '../../common/decorators/roles.decorator';
 
 @Controller('polls')
 export class PollsController {
@@ -45,7 +45,9 @@ export class PollsController {
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   async createPoll(@Request() req: any, @Body() createPollDto: CreatePollDto) {
-    return this.pollsService.create(req.user.sub, createPollDto);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const userId = (req.user as { sub: number }).sub;
+    return this.pollsService.create(userId, createPollDto);
   }
 
   @Put(':id')
@@ -56,7 +58,9 @@ export class PollsController {
     @Request() req: any,
     @Body() updatePollDto: UpdatePollDto,
   ) {
-    return this.pollsService.update(Number(id), req.user.sub, updatePollDto);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const userId = (req.user as { sub: number }).sub;
+    return this.pollsService.update(Number(id), userId, updatePollDto);
   }
 
   @Patch(':id/status')
@@ -67,14 +71,18 @@ export class PollsController {
     @Request() req: any,
     @Body() updateStatusDto: UpdatePollStatusDto,
   ) {
-    return this.pollsService.updateStatus(Number(id), req.user.sub, updateStatusDto);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const userId = (req.user as { sub: number }).sub;
+    return this.pollsService.updateStatus(Number(id), userId, updateStatusDto);
   }
 
   @Delete(':id')
   @UseGuards(JwtAuthGuard, RolesGuard)
   @Roles('admin')
   async deletePoll(@Param('id') id: string, @Request() req: any) {
-    await this.pollsService.delete(Number(id), req.user.sub);
+    // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+    const userId = (req.user as { sub: number }).sub;
+    await this.pollsService.delete(Number(id), userId);
     return { message: 'Poll deleted successfully' };
   }
 }

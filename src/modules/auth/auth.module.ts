@@ -5,7 +5,7 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { UsersModule } from '../users/users.module';
-import { JwtStrategy } from '@/common/strategies/jwt.strategy';
+import { JwtStrategy } from '../../common/strategies/jwt.strategy';
 
 @Module({
   imports: [
@@ -16,17 +16,12 @@ import { JwtStrategy } from '@/common/strategies/jwt.strategy';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const secret = configService.get<string>('JWT_SECRET');
-        const expiresIn = configService.get<string>('JWT_EXPIRATION') || '7d';
-        
         if (!secret) {
           throw new Error('JWT_SECRET is not defined in environment variables');
         }
 
         return {
           secret: secret,
-          signOptions: {
-            expiresIn: expiresIn as any, // ✅ Cast to any to bypass strict type checking
-          },
         };
       },
     }),

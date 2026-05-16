@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { VotesService } from './votes.service';
 import { CreateVoteDto } from './vote.dto';
-import { JwtAuthGuard } from '@/common/guards/jwt-auth.guard';
+import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
 
 @Controller('votes')
 export class VotesController {

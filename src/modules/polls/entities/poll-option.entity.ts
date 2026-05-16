@@ -6,7 +6,6 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
-  ForeignKey,
 } from 'typeorm';
 import { Poll } from './poll.entity';
 import { Vote } from '../../votes/entities/vote.entity';
@@ -17,7 +16,6 @@ export class PollOption {
   id!: number;
 
   @Column({ type: 'integer' })
-  @ForeignKey(() => Poll)
   pollId!: number;
 
   @Column({ type: 'varchar', length: 255 })

@@ -10,9 +10,9 @@ import { UsersService } from '../users/users.service';
 import { SignUpDto, LoginDto, AuthResponseDto } from './auth.dto';
 
 interface JwtPayload {
-  sub: number;// User ID
-  email: string;// Email
-  role: string; // Role
+  sub: number;
+  email: string;
+  role: string;
 }
 
 @Injectable()
@@ -40,7 +40,11 @@ export class AuthService {
       state,
     });
 
-    const accessToken = this.generateAccessToken(user.id, user.email, user.role);
+    const accessToken = this.generateAccessToken(
+      user.id,
+      user.email,
+      user.role,
+    );
 
     return {
       id: user.id,
@@ -66,7 +70,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const accessToken = this.generateAccessToken(user.id, user.email, user.role);
+    const accessToken = this.generateAccessToken(
+      user.id,
+      user.email,
+      user.role,
+    );
 
     return {
       id: user.id,
@@ -89,11 +97,19 @@ export class AuthService {
 
   async refreshToken(userId: number): Promise<{ accessToken: string }> {
     const user = await this.validateUser(userId);
-    const accessToken = this.generateAccessToken(user.id, user.email, user.role);
+    const accessToken = this.generateAccessToken(
+      user.id,
+      user.email,
+      user.role,
+    );
     return { accessToken };
   }
 
-  private generateAccessToken(userId: number, email: string, role: string): string {
+  private generateAccessToken(
+    userId: number,
+    email: string,
+    role: string,
+  ): string {
     const payload: JwtPayload = {
       sub: userId,
       email: email,
@@ -101,8 +117,9 @@ export class AuthService {
     };
 
     const expiresIn = this.configService.get<string>('JWT_EXPIRATION') || '7d';
-   return this.jwtService.sign(payload, {
+    // @ts-expect-error - JWT library type expects branded StringValue type
+    return this.jwtService.sign(payload, {
       expiresIn,
-    }); 
+    });
   }
 }

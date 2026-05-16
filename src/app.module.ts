@@ -32,8 +32,10 @@ import { Vote } from './modules/votes/entities/vote.entity';
         const username = configService.get<string>('DATABASE_USER');
         const password = configService.get<string>('DATABASE_PASSWORD');
         const database = configService.get<string>('DATABASE_NAME');
-        const synchronize = configService.get<string>('DATABASE_SYNCHRONIZE') === 'true';
-        const logging = configService.get<string>('DATABASE_LOGGING') === 'true';
+        const synchronize =
+          configService.get<string>('DATABASE_SYNCHRONIZE') === 'true';
+        const logging =
+          configService.get<string>('DATABASE_LOGGING') === 'true';
 
         // Validate required fields
         if (!host || !username || !database) {
@@ -61,7 +63,6 @@ import { Vote } from './modules/votes/entities/vote.entity';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => {
         const secret = configService.get<string>('JWT_SECRET');
-        const expiresIn = configService.get<string>('JWT_EXPIRATION');
 
         if (!secret) {
           throw new Error('JWT_SECRET is not configured in .env file');
@@ -69,9 +70,6 @@ import { Vote } from './modules/votes/entities/vote.entity';
 
         return {
           secret,
-          signOptions: {
-            expiresIn: expiresIn || '7d',
-          },
         };
       },
       global: true,
