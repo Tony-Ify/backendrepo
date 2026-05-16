@@ -8,7 +8,7 @@ import {
   IsEnum,
   ValidateNested,
 } from 'class-validator';
-import { Type } from 'class-transformer'; // ← CORRECT - from class-transformer, NOT class-validator
+import { Type } from 'class-transformer';
 
 class PollOptionDto {
   @IsString()
@@ -16,9 +16,10 @@ class PollOptionDto {
   optionText!: string;
 }
 
-enum PollStatus {
-  Active = 'active',
-  Closed = 'closed',
+// Use lowercase string enum values
+export enum PollStatus {
+  ACTIVE = 'active',
+  CLOSED = 'closed',
 }
 
 export class CreatePollDto {

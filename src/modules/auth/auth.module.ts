@@ -25,7 +25,7 @@ import { JwtStrategy } from '@/common/strategies/jwt.strategy';
         return {
           secret: secret,
           signOptions: {
-            expiresIn: expiresIn,
+            expiresIn: expiresIn as any, // ✅ Cast to any to bypass strict type checking
           },
         };
       },

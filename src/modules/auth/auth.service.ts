@@ -10,9 +10,9 @@ import { UsersService } from '../users/users.service';
 import { SignUpDto, LoginDto, AuthResponseDto } from './auth.dto';
 
 interface JwtPayload {
-  sub: number;
-  email: string;
-  role: string;
+  sub: number;// User ID
+  email: string;// Email
+  role: string; // Role
 }
 
 @Injectable()
@@ -101,6 +101,8 @@ export class AuthService {
     };
 
     const expiresIn = this.configService.get<string>('JWT_EXPIRATION') || '7d';
-    return this.jwtService.sign(payload, { expiresIn });
+   return this.jwtService.sign(payload, {
+      expiresIn,
+    }); 
   }
 }

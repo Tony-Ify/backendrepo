@@ -7,7 +7,6 @@ import {
   ManyToOne,
   OneToMany,
   JoinColumn,
-  ForeignKey,
 } from 'typeorm';
 import { User } from '../../users/entities/user.entity';
 import { PollOption } from './poll-option.entity';
@@ -26,7 +25,7 @@ export class Poll {
   @Column({ type: 'varchar', length: 255 })
   title!: string;
 
-  @Column({ type: 'text', nullable: true })
+  @Column({ type: 'text' })
   description!: string;
 
   @Column({
@@ -36,33 +35,31 @@ export class Poll {
   })
   status!: PollStatus;
 
-  @Column({ type: 'integer' })
-  @ForeignKey(() => User)
+  @Column({ type: 'int' })
   createdById!: number;
 
   @CreateDateColumn()
   createdAt!: Date;
 
-  @Column({ type: 'timestamp', nullable: true })
-  closedAt!: Date;
-
   @UpdateDateColumn()
   updatedAt!: Date;
 
+  @Column({ type: 'timestamp', nullable: true })
+  closedAt!: Date | null;
+
   // Relations
-  @ManyToOne(() => User, user => user.createdPolls, {
-    eager: true,
-    onDelete: 'CASCADE',
-  })
+  @ManyToOne(() => User, (user) => user.createdPolls)
   @JoinColumn({ name: 'createdById' })
   createdBy!: User;
 
-  @OneToMany(() => PollOption, option => option.poll, {
-    cascade: true,
-    eager: true,
-  })
+  @OneToMany(() => PollOption, (option) => option.poll, { cascade: true })
   options!: PollOption[];
 
-  @OneToMany(() => Vote, vote => vote.poll, { cascade: true })
+  @OneToMany(() => Vote, (vote) => vote.poll, { cascade: true })
   votes!: Vote[];
+
+  // Helper to get total votes
+  get totalVotes(): number {
+    return this.votes?.length || 0;
+  }
 }
