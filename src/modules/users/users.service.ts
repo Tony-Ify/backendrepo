@@ -10,6 +10,16 @@ export class UsersService {
     private usersRepository: Repository<User>,
   ) {}
 
+  async updateRole(id: number, role: 'user' | 'admin'): Promise<User> {
+  const user = await this.findById(id);
+  if (!user) {
+    throw new NotFoundException('User not found');
+  }
+  
+  user.role = role as any;
+  return this.usersRepository.save(user);
+}
+
   async create(userData: {
     name: string;
     email: string;

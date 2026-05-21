@@ -8,7 +8,8 @@ import { ConfigService } from '@nestjs/config';
 import * as bcrypt from 'bcryptjs';
 import { UsersService } from '../users/users.service';
 import { SignUpDto, LoginDto, AuthResponseDto } from './auth.dto';
-
+import { ForbiddenException } from '@nestjs/common';
+import { CreateAdminDto } from './create-admin.dto';
 interface JwtPayload {
   sub: number;
   email: string;
@@ -22,6 +23,41 @@ export class AuthService {
     private jwtService: JwtService,
     private configService: ConfigService,
   ) {}
+
+async createAdmin(createAdminDto: CreateAdminDto) {
+  const { name, email, password, state } = createAdminDto;
+
+  const existingUser = await this.usersService.findByEmail(email);
+  if (existingUser) {
+    throw new BadRequestException('Email already registered');
+  }
+
+  const hashedPassword = await bcrypt.hash(password, 10);
+
+  const user = await this.usersService.create({
+    name,
+    email,
+    password: hashedPassword,
+    state,
+  });
+
+  await this.usersService.updateRole(user.id, 'admin');
+
+  const accessToken = this.generateAccessToken(user.id, user.email, 'admin');
+
+  return {
+    message: 'Admin user created successfully',
+    user: {
+      id: user.id,
+      name: user.name,
+      email: user.email,
+      state: user.state,
+      role: 'admin',
+    },
+    accessToken,
+    expiresIn: this.configService.get<string>('JWT_EXPIRATION') || '7d',
+  };
+}
 
   async signUp(signUpDto: SignUpDto): Promise<AuthResponseDto> {
     const { name, email, password, state } = signUpDto;

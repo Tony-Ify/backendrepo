@@ -7,6 +7,7 @@ import {
   Body,
   UseGuards,
   Request,
+  Query,
 } from '@nestjs/common';
 import { VotesService } from './votes.service';
 import { CreateVoteDto } from './vote.dto';
@@ -53,8 +54,11 @@ export class ResultsController {
   @Get(':pollId/by-state')
   async getPollResultsByState(
     @Param('pollId') pollId: string,
-    @Body('state') state: string,
+    @Query('state') state: string,  
   ) {
+    if (!state) {
+      throw new Error('State parameter is required');
+    }
     return this.votesService.getPollResultsByState(Number(pollId), state);
   }
 
